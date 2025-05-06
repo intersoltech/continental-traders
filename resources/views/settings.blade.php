@@ -1,4 +1,4 @@
-@extends('layouts.master') {{-- Replace with your actual layout --}}
+@extends('layouts.app') {{-- Replace with your actual layout --}}
 
 @section('content')
 <div class="pagetitle">

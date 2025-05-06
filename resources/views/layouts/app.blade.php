@@ -10,7 +10,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 
-  <title>Dashboard - NiceAdmin Bootstrap Template</title>
+  <title>@yield('title')</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
 
@@ -150,7 +150,7 @@
           </li>
           <li><hr class="dropdown-divider"></li>
           <li>
-            <a class="dropdown-item d-flex align-items-center" href="{{ route('profile') }}">
+            <a class="dropdown-item d-flex align-items-center" href="{{ route('profile.show') }}">
               <i class="bi bi-person"></i>
               <span>My Profile</span>
             </a>
@@ -186,276 +186,126 @@
     </ul>
   </nav><!-- End Icons Navigation -->
 
-</header><!-- End Header -->
+</header><!-- End Header -->  
 
-  <!-- ======= Sidebar ======= -->
-  <aside id="sidebar" class="sidebar">
+<!-- ======= Sidebar ======= -->
+<aside id="sidebar" class="sidebar">
 
-    <ul class="sidebar-nav" id="sidebar-nav">
+  <ul class="sidebar-nav" id="sidebar-nav">
 
-      <li class="nav-item">
-        <a class="nav-link " href="index.html">
-          <i class="bi bi-grid"></i>
-          <span>Dashboard</span>
-        </a>
-      </li><!-- End Dashboard Nav -->
+    <!-- Dashboard -->
+    <li class="nav-item">
+      <a class="nav-link {{ Request::routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">
+        <i class="bi bi-grid"></i>
+        <span>Dashboard</span>
+      </a>
+    </li><!-- End Dashboard Nav -->
 
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#components-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-menu-button-wide"></i><span>Components</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="components-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="components-alerts.html">
-              <i class="bi bi-circle"></i><span>Alerts</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-accordion.html">
-              <i class="bi bi-circle"></i><span>Accordion</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-badges.html">
-              <i class="bi bi-circle"></i><span>Badges</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-breadcrumbs.html">
-              <i class="bi bi-circle"></i><span>Breadcrumbs</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-buttons.html">
-              <i class="bi bi-circle"></i><span>Buttons</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-cards.html">
-              <i class="bi bi-circle"></i><span>Cards</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-carousel.html">
-              <i class="bi bi-circle"></i><span>Carousel</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-list-group.html">
-              <i class="bi bi-circle"></i><span>List group</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-modal.html">
-              <i class="bi bi-circle"></i><span>Modal</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-tabs.html">
-              <i class="bi bi-circle"></i><span>Tabs</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-pagination.html">
-              <i class="bi bi-circle"></i><span>Pagination</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-progress.html">
-              <i class="bi bi-circle"></i><span>Progress</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-spinners.html">
-              <i class="bi bi-circle"></i><span>Spinners</span>
-            </a>
-          </li>
-          <li>
-            <a href="components-tooltips.html">
-              <i class="bi bi-circle"></i><span>Tooltips</span>
-            </a>
-          </li>
-        </ul>
-      </li><!-- End Components Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#forms-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-journal-text"></i><span>Forms</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="forms-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="forms-elements.html">
-              <i class="bi bi-circle"></i><span>Form Elements</span>
-            </a>
-          </li>
-          <li>
-            <a href="forms-layouts.html">
-              <i class="bi bi-circle"></i><span>Form Layouts</span>
-            </a>
-          </li>
-          <li>
-            <a href="forms-editors.html">
-              <i class="bi bi-circle"></i><span>Form Editors</span>
-            </a>
-          </li>
-          <li>
-            <a href="forms-validation.html">
-              <i class="bi bi-circle"></i><span>Form Validation</span>
-            </a>
-          </li>
-        </ul>
-      </li><!-- End Forms Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Tables</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="tables-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="tables-general.html">
-              <i class="bi bi-circle"></i><span>General Tables</span>
-            </a>
-          </li>
-          <li>
-            <a href="tables-data.html">
-              <i class="bi bi-circle"></i><span>Data Tables</span>
-            </a>
-          </li>
-        </ul>
-      </li><!-- End Tables Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#charts-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-bar-chart"></i><span>Charts</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="charts-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="charts-chartjs.html">
-              <i class="bi bi-circle"></i><span>Chart.js</span>
-            </a>
-          </li>
-          <li>
-            <a href="charts-apexcharts.html">
-              <i class="bi bi-circle"></i><span>ApexCharts</span>
-            </a>
-          </li>
-          <li>
-            <a href="charts-echarts.html">
-              <i class="bi bi-circle"></i><span>ECharts</span>
-            </a>
-          </li>
-        </ul>
-      </li><!-- End Charts Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#icons-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-gem"></i><span>Icons</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="icons-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="icons-bootstrap.html">
-              <i class="bi bi-circle"></i><span>Bootstrap Icons</span>
-            </a>
-          </li>
-          <li>
-            <a href="icons-remix.html">
-              <i class="bi bi-circle"></i><span>Remix Icons</span>
-            </a>
-          </li>
-          <li>
-            <a href="icons-boxicons.html">
-              <i class="bi bi-circle"></i><span>Boxicons</span>
-            </a>
-          </li>
-        </ul>
-      </li><!-- End Icons Nav -->
-
-      <li class="nav-heading">Pages</li>
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="users-profile.html">
-          <i class="bi bi-person"></i>
-          <span>Profile</span>
-        </a>
-      </li><!-- End Profile Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-faq.html">
-          <i class="bi bi-question-circle"></i>
-          <span>F.A.Q</span>
-        </a>
-      </li><!-- End F.A.Q Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-contact.html">
-          <i class="bi bi-envelope"></i>
-          <span>Contact</span>
-        </a>
-      </li><!-- End Contact Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-register.html">
-          <i class="bi bi-card-list"></i>
-          <span>Register</span>
-        </a>
-      </li><!-- End Register Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-login.html">
-          <i class="bi bi-box-arrow-in-right"></i>
-          <span>Login</span>
-        </a>
-      </li><!-- End Login Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-error-404.html">
-          <i class="bi bi-dash-circle"></i>
-          <span>Error 404</span>
-        </a>
-      </li><!-- End Error 404 Page Nav -->
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="pages-blank.html">
-          <i class="bi bi-file-earmark"></i>
-          <span>Blank</span>
-        </a>
-      </li><!-- End Blank Page Nav -->
-      <!-- Authentication Links -->
-      @guest
-      @if (Route::has('login'))
-          <li class="nav-item">
-              <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-          </li>
-      @endif
-
-      @if (Route::has('register'))
-          <li class="nav-item">
-              <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-          </li>
-      @endif
-  @else
-      <li class="nav-item dropdown">
-          <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-              {{ Auth::user()->name }}
+    <!-- Inventory -->
+    <li class="nav-item">
+      <a class="nav-link {{ Request::routeIs('products.*') || Request::routeIs('vendors.*') ? 'active' : '' }}" data-bs-target="#inventory-nav" data-bs-toggle="collapse" href="#">
+        <i class="bi bi-box"></i><span>Inventory</span><i class="bi bi-chevron-down ms-auto"></i>
+      </a>
+      <ul id="inventory-nav" class="nav-content collapse {{ Request::routeIs('products.*') || Request::routeIs('vendors.*') ? 'show' : '' }}" data-bs-parent="#sidebar-nav">
+        <li>
+          <a href="{{ route('products.index') }}" class="{{ Request::routeIs('products.*') ? 'active' : '' }}">
+            <i class="bi bi-circle"></i><span>Products</span>
           </a>
+        </li>
+        <li>
+          <a href="{{ route('vendors.index') }}" class="{{ Request::routeIs('vendors.*') ? 'active' : '' }}">
+            <i class="bi bi-circle"></i><span>Vendors</span>
+          </a>
+        </li>
+      </ul>
+    </li><!-- End Inventory Nav -->
 
-          <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-              <a class="dropdown-item" href="{{ route('logout') }}"
-                 onclick="event.preventDefault();
-                               document.getElementById('logout-form').submit();">
-                  {{ __('Logout') }}
-              </a>
+    <!-- Transactions -->
+    <li class="nav-item">
+      <a class="nav-link {{ Request::routeIs('purchases.*') || Request::routeIs('sales.*') ? 'active' : '' }}" data-bs-target="#transactions-nav" data-bs-toggle="collapse" href="#">
+        <i class="bi bi-cash-coin"></i><span>Transactions</span><i class="bi bi-chevron-down ms-auto"></i>
+      </a>
+      <ul id="transactions-nav" class="nav-content collapse {{ Request::routeIs('purchases.*') || Request::routeIs('sales.*') ? 'show' : '' }}" data-bs-parent="#sidebar-nav">
+        <li>
+          <a href="{{ route('purchases.index') }}" class="{{ Request::routeIs('purchases.*') ? 'active' : '' }}">
+            <i class="bi bi-circle"></i><span>Purchases</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ route('sales.index') }}" class="{{ Request::routeIs('sales.*') ? 'active' : '' }}">
+            <i class="bi bi-circle"></i><span>Sales</span>
+          </a>
+        </li>
+      </ul>
+    </li><!-- End Transactions Nav -->
 
-              <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                  @csrf
-              </form>
-          </div>
-      </li>
-  @endguest
+    <!-- Customers -->
+    <li class="nav-item">
+      <a class="nav-link {{ Request::routeIs('customers.*') ? 'active' : '' }}" href="{{ route('customers.index') }}">
+        <i class="bi bi-person-lines-fill"></i><span>Customers</span>
+      </a>
+    </li><!-- End Customers Nav -->
 
-    </ul>
+    <!-- Reports -->
+    <li class="nav-item">
+      <a class="nav-link {{ Request::routeIs('reports.*') ? 'active' : '' }}" data-bs-target="#reports-nav" data-bs-toggle="collapse" href="#">
+        <i class="bi bi-file-earmark-text"></i><span>Reports</span><i class="bi bi-chevron-down ms-auto"></i>
+      </a>
+      <ul id="reports-nav" class="nav-content collapse {{ Request::routeIs('reports.*') ? 'show' : '' }}" data-bs-parent="#sidebar-nav">
+        <li>
+          <a href="{{ route('reports.daily') }}" class="{{ Request::routeIs('reports.daily') ? 'active' : '' }}">
+            <i class="bi bi-circle"></i><span>Daily Report</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ route('reports.pdf') }}" class="{{ Request::routeIs('reports.pdf') ? 'active' : '' }}">
+            <i class="bi bi-circle"></i><span>Download PDF Report</span>
+          </a>
+        </li>
+      </ul>
+    </li><!-- End Reports Nav -->
 
-  </aside><!-- End Sidebar-->
+    <!-- Profile -->
+    <li class="nav-item">
+      <a class="nav-link {{ Request::routeIs('profile.show') ? 'active' : '' }}" href="{{ route('profile.show') }}">
+        <i class="bi bi-person"></i><span>Profile</span>
+      </a>
+    </li><!-- End Profile Nav -->
+
+    <!-- Settings -->
+    <li class="nav-item">
+      <a class="nav-link {{ Request::routeIs('settings') ? 'active' : '' }}" href="{{ route('settings') }}">
+        <i class="bi bi-gear"></i>
+        <span>Settings</span>
+      </a>
+    </li><!-- End Settings Nav -->
+
+    <!-- Help -->
+    <li class="nav-item">
+      <a class="nav-link {{ Request::routeIs('help') ? 'active' : '' }}" href="{{ route('help') }}">
+        <i class="bi bi-question-circle"></i>
+        <span>Help</span>
+      </a>
+    </li><!-- End Help Nav -->
+
+    <!-- Logout -->
+    <li class="nav-item">
+      <a class="nav-link {{ Request::routeIs('logout') ? 'active' : '' }}" href="{{ route('logout') }}"
+         onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+        <i class="bi bi-box-arrow-in-right"></i>
+        <span>Logout</span>
+      </a>
+
+      <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+        @csrf
+      </form>
+    </li><!-- End Logout Nav -->
+
+  </ul>
+
+</aside><!-- End Sidebar-->
+
+
 
   @yield('content')
 
