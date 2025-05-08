@@ -30,13 +30,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/purchases', PurchaseController::class);
     // routes/web.php
     Route::get('/search', [SearchController::class, 'index'])->name('search');
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile')->middleware('auth');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings')->middleware('auth');
     Route::get('/help', [HelpController::class, 'index'])->name('help')->middleware('auth');
     Route::get('/reports/daily', [ReportController::class, 'daily'])->name('reports.daily');
-Route::get('/reports/pdf', [ReportController::class, 'downloadPDF'])->name('reports.pdf');
-Route::get('/receipts/{id}', [ReceiptController::class, 'show'])->name('receipts.show');
-Route::get('/receipts/{id}/download', [ReceiptController::class, 'download'])->name('receipts.download');
+    Route::get('/reports/pdf', [ReportController::class, 'downloadPDF'])->name('reports.pdf');
+    Route::get('/receipts/{id}', [ReceiptController::class, 'show'])->name('receipts.show');
+    Route::get('/receipts/{id}/download', [ReceiptController::class, 'download'])->name('receipts.download');
 
 });
