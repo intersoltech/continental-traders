@@ -17,26 +17,9 @@ class Purchase extends Model
     {
         return $this->belongsTo(Vendor::class);
     }
+
     public function items()
     {
         return $this->hasMany(PurchaseItem::class);
     }
-    protected static function booted()
-{
-    static::created(function ($purchase) {
-        foreach ($purchase->items as $item) {
-            $product = $item->product;
-            $product->quantity += $item->quantity;
-            $product->save();
-        }
-    });
-
-    static::deleting(function ($purchase) {
-        foreach ($purchase->items as $item) {
-            $product = $item->product;
-            $product->quantity -= $item->quantity;
-            $product->save();
-        }
-    });
-}
 }

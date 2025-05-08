@@ -23,9 +23,27 @@
           <div class="card-body">
             <h5 class="card-title">Update Battery</h5>
 
-            <form action="{{ route('products.update', $product->id) }}" method="POST">
+            <form action="{{ route('products.update', $product->id) }}" method="POST" enctype="multipart/form-data">
+
               @csrf
               @method('PUT')
+
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">Product Image</label>
+                <div class="col-sm-10">
+                  <input type="file" name="product_image" class="form-control" accept="image/*" onchange="previewImage(event)">
+                  
+                  <div class="mt-2">
+                    @if ($product->product_image)
+                      <p class="mb-1">Current Image:</p>
+                      <img src="{{ asset('storage/' . $product->product_image) }}" id="currentPreview" class="img-thumbnail mb-2" style="max-height: 150px;">
+                    @endif
+              
+                    <img id="preview" src="#" style="display: none; max-height: 150px;" class="img-thumbnail">
+                  </div>
+                </div>
+              </div>
+              
 
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label">Name</label>
@@ -52,13 +70,6 @@
                 <label class="col-sm-2 col-form-label">Warranty (Months)</label>
                 <div class="col-sm-10">
                   <input type="number" name="warranty_months" class="form-control" value="{{ $product->warranty_months }}">
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Quantity</label>
-                <div class="col-sm-10">
-                  <input type="number" name="quantity" class="form-control" value="{{ $product->quantity }}" required>
                 </div>
               </div>
 
@@ -104,3 +115,23 @@
   </section>
 </main>
 @endsection
+@push('scripts')
+<script>
+  function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = function () {
+      const preview = document.getElementById('preview');
+      preview.src = reader.result;
+      preview.style.display = 'block';
+
+      // Hide current image if new one selected
+      const current = document.getElementById('currentPreview');
+      if (current) current.style.display = 'none';
+    };
+
+    if (event.target.files[0]) {
+      reader.readAsDataURL(event.target.files[0]);
+    }
+  }
+</script>  
+@endpush

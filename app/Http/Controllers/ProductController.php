@@ -13,7 +13,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::all();
+        $products = Product::with('inventory', 'vendor')->get();
         return view('products.index', compact('products'));
     }
 
@@ -36,13 +36,21 @@ class ProductController extends Controller
                 'type' => 'required|string',
                 'capacity' => 'required|string',
                 'warranty_months' => 'nullable|integer',
-                'quantity' => 'required|integer|min:0',
                 'cost_price' => 'required|numeric|min:0',
                 'selling_price' => 'required|numeric|min:0',
                 'vendor_id' => 'required|exists:vendors,id',
+                'product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:12048',
         ]);
 
-        Product::create($request->all());
+        $data = $request->all();
+
+        if ($request->hasFile('product_image')) {
+            $path = $request->file('product_image')->store('products', 'public');
+            $data['product_image'] = $path;
+        }
+
+        Product::create($data);
+
         return redirect()->route('products.index')->with('success', 'Product created successfully.');
     }
 
@@ -73,13 +81,26 @@ class ProductController extends Controller
             'type' => 'required|string',
             'capacity' => 'required|string',
             'warranty_months' => 'nullable|integer',
-            'quantity' => 'required|integer|min:0',
             'cost_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
             'vendor_id' => 'required|exists:vendors,id',
+            'product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:12048',
         ]);
 
-        $product->update($request->all());
+        $data = $request->all();
+
+        if ($request->hasFile('product_image')) {
+            // delete old image if it exists
+            if ($product->product_image && \Storage::disk('public')->exists($product->product_image)) {
+                \Storage::disk('public')->delete($product->product_image);
+            }
+
+            $path = $request->file('product_image')->store('products', 'public');
+            $data['product_image'] = $path;
+        }
+
+        $product->update($data);
+
 
         return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }

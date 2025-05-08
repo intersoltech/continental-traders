@@ -23,8 +23,18 @@
           <div class="card-body">
             <h5 class="card-title">New Battery</h5>
 
-            <form action="{{ route('products.store') }}" method="POST">
+            <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
+
               @csrf
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">Product Image</label>
+                <div class="col-sm-10">
+                  <input type="file" name="product_image" class="form-control" accept="image/*" onchange="previewImage(event)">
+                  <div class="mt-2">
+                    <img id="preview" src="#" alt="Preview" style="display: none; max-height: 150px;" class="img-thumbnail">
+                  </div>
+                </div>
+              </div>
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label">Name</label>
                 <div class="col-sm-10">
@@ -51,14 +61,7 @@
                 <div class="col-sm-10">
                   <input type="number" name="warranty_months" class="form-control" min="0">
                 </div>
-              </div>
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Quantity</label>
-                <div class="col-sm-10">
-                  <input type="number" name="quantity" class="form-control" min="0" required>
-                </div>
-              </div>
+              </div>              
 
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label">Cost Price</label>
@@ -101,3 +104,23 @@
   </section>
 </main>
 @endsection
+@push('scripts')
+<script>
+  function previewImage(event) {
+    const input = event.target;
+    const reader = new FileReader();
+
+    reader.onload = function() {
+      const preview = document.getElementById('preview');
+      preview.src = reader.result;
+      preview.style.display = 'block';
+    };
+
+    if (input.files && input.files[0]) {
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
+
+  
+@endpush

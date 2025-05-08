@@ -24,21 +24,32 @@
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>Purchase ID</th>
                   <th>Vendor</th>
                   <th>Date</th>
                   <th>Total Amount</th>
                   <th>Payment Method</th>
+                  <th>Purchased Items</th>
                   <th>Actions</th>
                 </tr>
-              </thead>
+              </thead>              
               <tbody>
                 @foreach($purchases as $purchase)
-                  <tr>
+                  <tr>                    
                     <td>{{ $loop->iteration }}</td>
+                    <td>{{ $purchase->id }}</td>
                     <td>{{ $purchase->vendor->name }}</td>
                     <td>{{ $purchase->purchase_date }}</td>
                     <td>{{ number_format($purchase->total_amount, 2) }}</td>
                     <td>{{ ucfirst($purchase->payment_method) }}</td>
+                    <td colspan="7">
+                      <strong>Purchased Items:</strong>
+                      <ul class="mt-2">
+                        @foreach($purchase->items as $item)
+                          <li>{{ $item->product->name }} — Qty: {{ $item->quantity }}, Cost: Rs {{ number_format($item->price, 2) }}</li>
+                        @endforeach
+                      </ul>
+                    </td>
                     <td>
                       <a href="{{ route('purchases.edit', $purchase) }}" class="btn btn-sm btn-warning">Edit</a>
                       <form action="{{ route('purchases.destroy', $purchase) }}" method="POST" style="display:inline-block;">
@@ -49,7 +60,7 @@
                     </td>
                   </tr>
                 @endforeach
-              </tbody>
+              </tbody>              
             </table>
 
           </div>
