@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Vendor;
 use App\Models\Purchase;
 use Illuminate\Http\Request;
 

@@ -26,4 +26,22 @@ class Sale extends Model
     public function product() {
         return $this->belongsTo(Product::class);
     }
+    protected static function booted()
+{
+    static::created(function ($sale) {
+        foreach ($sale->items as $item) {
+            $product = $item->product;
+            $product->quantity -= $item->quantity;
+            $product->save();
+        }
+    });
+
+    static::deleting(function ($sale) {
+        foreach ($sale->items as $item) {
+            $product = $item->product;
+            $product->quantity += $item->quantity;
+            $product->save();
+        }
+    });
+}
 }

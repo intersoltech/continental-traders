@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale;
+use App\Models\Product;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 
 class SaleController extends Controller
@@ -32,6 +34,38 @@ class SaleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'customer_name' => 'required|string',
+            'products.*.product_id' => 'required|exists:products,id',
+            'products.*.quantity' => 'required|integer|min:1',
+            'products.*.price' => 'required|numeric',
+        ]);
+    
+        // Save customer
+        $customer = Customer::create([
+            'name' => $request->customer_name,
+            'phone' => $request->customer_phone,
+            'address' => $request->customer_address ?? '',
+        ]);
+    
+        // Save sale
+        $sale = Sale::create([
+            'customer_id' => $customer->id,
+            'total_amount' => array_sum(array_column($request->products, 'subtotal')),
+        ]);
+    
+        // Save items
+        foreach ($request->products as $item) {
+            SaleItem::create([
+                'sale_id' => $sale->id,
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'price' => $item['price'],
+                'subtotal' => $item['quantity'] * $item['price'],
+            ]);
+        }
+    
+        return redirect()->route('sales.index')->with('success', 'Sale recorded!');
+        $request->validate([
             'product_id' => 'required|exists:products,id',
             'customer_id' => 'required|exists:customers,id',
             'quantity' => 'required|integer|min:1',
@@ -59,7 +93,27 @@ class SaleController extends Controller
             'total_price' => $total_price,
             'sale_type' => $request->sale_type,
         ]);
-
+        $validated = $request->validate([
+            'customer_name' => 'required|string',
+            'customer_phone' => 'required|string',
+            'customer_address' => 'nullable|string',
+            // other sale fields...
+        ]);
+    
+        $customer = Customer::create([
+            'name' => $validated['customer_name'],
+            'phone' => $validated['customer_phone'],
+            'address' => $validated['customer_address'] ?? '',
+        ]);
+    
+        $sale = Sale::create([
+            'customer_id' => $customer->id,
+            // other sale fields...
+        ]);
+    
+        // handle sale items etc.
+    
+        return redirect()->route('sales.index')->with('success', 'Sale recorded successfully!');
         // Update inventory
         $product->decrement('quantity', $request->quantity);
 
@@ -79,6 +133,7 @@ class SaleController extends Controller
      */
     public function edit(Sale $sale)
     {
+        $sale->load('items');
         $products = Product::all();
         $customers = Customer::all();
         return view('sales.edit', compact('sale', 'products', 'customers'));

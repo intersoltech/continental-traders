@@ -1,97 +1,90 @@
 @extends('layouts.app')
-@section('title')
-    Add Sale
-@endsection
+
 @section('content')
-<main id="main" class="main">
-
-  <div class="pagetitle">
-    <h1>Add New Sale</h1>
-    <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-        <li class="breadcrumb-item active">Add Sale</li>
-      </ol>
-    </nav>
-  </div>
-
-  <section class="section">
-    <div class="row">
-      <div class="col-lg-12">
-
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Sale Form</h5>
-
-            <form action="{{ route('sales.store') }}" method="POST">
-              @csrf
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Customer</label>
-                <div class="col-sm-10">
-                  <select name="customer_id" class="form-select">
-                    @foreach($customers as $customer)
-                      <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                    @endforeach
-                  </select>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Product</label>
-                <div class="col-sm-10">
-                  <select name="product_id" class="form-select">
-                    @foreach($products as $product)
-                      <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->selling_price }})</option>
-                    @endforeach
-                  </select>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Quantity</label>
-                <div class="col-sm-10">
-                  <input type="number" name="quantity" class="form-control" required>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Discount (%)</label>
-                <div class="col-sm-10">
-                  <select name="discount" class="form-select">
-                    <option value="0">0%</option>
-                    <option value="2">2%</option>
-                    <option value="4">4%</option>
-                    <option value="6">6%</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Payment Method</label>
-                <div class="col-sm-10">
-                  <select name="payment_method" class="form-select">
-                    <option value="cash">Cash</option>
-                    <option value="online">Online</option>
-                    <option value="card">Card</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <div class="col-sm-10 offset-sm-2">
-                  <button type="submit" class="btn btn-primary">Submit Sale</button>
-                </div>
-              </div>
-
-            </form>
-
-          </div>
+<div class="container">
+    <h1>Create Sale</h1>
+    <form action="{{ route('sales.store') }}" method="POST">
+        @csrf
+        <div class="mb-3">
+            <label>Date</label>
+            <input type="date" name="date" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Customer</label>
+            <select name="customer_id" class="form-control" required>
+                @foreach ($customers as $customer)
+                    <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                @endforeach
+            </select>
         </div>
 
-      </div>
-    </div>
-  </section>
+        <h5>Products</h5>
+        <table class="table" id="products-table">
+            <thead>
+                <tr>
+                    <th>Product</th><th>Price</th><th>Qty</th><th>Subtotal</th><th></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
 
-</main>
+        <button type="button" class="btn btn-secondary" onclick="addRow()">Add Product</button>
+
+        <div class="mb-3 mt-3">
+            <label>Discount</label>
+            <input type="number" step="0.01" name="discount" class="form-control" value="0">
+        </div>
+
+        <div class="mb-3">
+            <label>Final Total</label>
+            <input type="number" step="0.01" name="final_total" class="form-control" readonly>
+        </div>
+
+        <button class="btn btn-success">Save Sale</button>
+    </form>
+</div>
+
+<script>
+let products = @json($products);
+
+function addRow() {
+    const row = `<tr>
+        <td>
+            <select name="items[][product_id]" class="form-control" onchange="updatePrice(this)">
+                ${products.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} (In stock: ${p.quantity})</option>`).join('')}
+            </select>
+        </td>
+        <td><input type="number" name="items[][price]" class="form-control price" readonly></td>
+        <td><input type="number" name="items[][quantity]" class="form-control quantity" oninput="updateSubtotal(this)"></td>
+        <td><input type="number" name="items[][subtotal]" class="form-control subtotal" readonly></td>
+        <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); updateTotal();">X</button></td>
+    </tr>`;
+    document.querySelector("#products-table tbody").insertAdjacentHTML("beforeend", row);
+}
+
+function updatePrice(select) {
+    const price = select.selectedOptions[0].dataset.price;
+    const row = select.closest('tr');
+    row.querySelector('.price').value = price;
+    updateSubtotal(row.querySelector('.quantity'));
+}
+
+function updateSubtotal(input) {
+    const row = input.closest('tr');
+    const price = parseFloat(row.querySelector('.price').value || 0);
+    const qty = parseFloat(input.value || 0);
+    const subtotal = price * qty;
+    row.querySelector('.subtotal').value = subtotal.toFixed(2);
+    updateTotal();
+}
+
+function updateTotal() {
+    let total = 0;
+    document.querySelectorAll('.subtotal').forEach(s => {
+        total += parseFloat(s.value || 0);
+    });
+    const discount = parseFloat(document.querySelector('[name="discount"]').value || 0);
+    document.querySelector('[name="final_total"]').value = (total - discount).toFixed(2);
+}
+</script>
 @endsection
