@@ -97,8 +97,7 @@
                   <button type="submit" class="btn btn-primary">Save Purchase</button>
                 </div>
               </div>
-            </form>
-            
+            </form>          
 
           </div>
         </div>

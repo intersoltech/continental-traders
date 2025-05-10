@@ -31,10 +31,19 @@ class CustomerController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:255|unique:customers,phone',
+            'email' => 'nullable|email|unique:customers,email', // Validate email
+            'address' => 'nullable|string|max:255',
         ]);
 
-        Customer::create($request->all());
-        return redirect()->route('customers.index')->with('success', 'Customer added successfully.');
+        $customer = Customer::create([
+            'name' => $request->name,
+            'phone' => $request->phone,
+            'email' => $request->email,  // Store email
+            'address' => $request->address,
+        ]);
+
+        return redirect()->route('customers.index')->with('success', 'Customer created successfully');
     }
 
     /**
@@ -73,5 +82,15 @@ class CustomerController extends Controller
     {
         $customer->delete();
         return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
+    }
+
+    /**
+     * Search for customers by phone number.
+     */
+    public function search(Request $request)
+    {
+        $phone = $request->get('phone');
+        $customers = Customer::where('phone', 'like', "%$phone%")->get();
+        return response()->json($customers);
     }
 }

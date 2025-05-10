@@ -15,6 +15,9 @@
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
+        @if(session('success'))
+          <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
         <a href="{{ route('purchases.create') }}" class="btn btn-primary mb-3">Add Purchase</a>
         <div class="card">
           <div class="card-body">

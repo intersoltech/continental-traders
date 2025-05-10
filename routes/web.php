@@ -28,6 +28,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/customers', CustomerController::class);
     Route::resource('/sales', SaleController::class);
     Route::resource('/purchases', PurchaseController::class);
+    Route::get('/search-customer', [CustomerController::class, 'search'])->name('customer.search');
     // routes/web.php
     Route::get('/search', [SearchController::class, 'index'])->name('search');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');

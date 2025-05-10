@@ -30,7 +30,7 @@ class FinalCleanupPurchasesTable extends Migration
         // If rolling back, we can add the columns back with their default values
         Schema::table('purchases', function (Blueprint $table) {
             $table->decimal('cost_price', 10, 2)->default(0);
-            $table->integer('warranty_months')->nullable();
+              $table->integer('warranty_months')->nullable();
         });
     }
 }
