@@ -23,7 +23,7 @@ class SaleController extends Controller
      */
     public function create()
     {
-        $products = Product::all();
+        $products = Product::with('inventory')->get(); // Fetch associated inventory
         $customers = Customer::all();
         return view('sales.create', compact('products', 'customers'));
     }
@@ -33,92 +33,79 @@ class SaleController extends Controller
      */
     public function store(Request $request)
     {
+        dd($request->all());
+        // Validate the products array
         $request->validate([
+            'customer_id' => 'required|string',
             'customer_name' => 'required|string',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
-            'products.*.price' => 'required|numeric',
+            'products.*.price' => 'required|numeric|min:0',            
         ]);
     
-        // Save customer
-        $customer = Customer::create([
+        // Check if the customer exists or create a new one
+        $customer = Customer::firstOrCreate([
+            'id' => $request->customer_id
+        ], [
+            'phone' => $request->new_customer_phone,
             'name' => $request->customer_name,
-            'phone' => $request->customer_phone,
-            'address' => $request->customer_address ?? '',
+            'address' => $request->new_customer_address,
         ]);
     
-        // Save sale
-        $sale = Sale::create([
-            'customer_id' => $customer->id,
-            'total_amount' => array_sum(array_column($request->products, 'subtotal')),
-        ]);
-    
-        // Save items
+        // Calculate the total sale amount
+        $totalAmount = 0;
         foreach ($request->products as $item) {
-            SaleItem::create([
-                'sale_id' => $sale->id,
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-                'subtotal' => $item['quantity'] * $item['price'],
+            $totalAmount += $item['quantity'] * $item['price'];
+        }
+    
+        // Create the sale record
+        try {
+            $sale = Sale::create([
+                'customer_id' => $customer->id,
+                'total' => $totalAmount - $request->discount, // Applying discount to total
+                'payment_method' => $request->payment_method,
             ]);
+        } catch (\Exception $e) {
+            return back()->withErrors(['sale_error' => 'An error occurred while saving the sale: ' . $e->getMessage()]);
         }
     
-        return redirect()->route('sales.index')->with('success', 'Sale recorded!');
-        $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'customer_id' => 'required|exists:customers,id',
-            'quantity' => 'required|integer|min:1',
-            'discount_percent' => 'nullable|in:0,2,4,6',
-            'sale_type' => 'required|in:cash,online,card',
-        ]);
-
-        $product = Product::findOrFail($request->product_id);
-
-        if ($product->quantity < $request->quantity) {
-            return back()->with('error', 'Not enough stock available.');
+        // Loop through each product and create sale items, and update the inventory
+        foreach ($request->products as $item) {
+            // Fetch product and check inventory
+            $product = Product::find($item['product_id']);
+            $inventory = Inventory::where('product_id', $item['product_id'])->first();
+    
+            if (!$inventory || $inventory->quantity < $item['quantity']) {
+                // Handle insufficient inventory
+                return back()->withErrors(['inventory_error' => 'Not enough stock for product: ' . $product->name]);
+            }
+    
+            // Create sale item entry
+            try {
+                $saleItem = SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'total' => $item['quantity'] * $item['price'],
+                ]);
+            } catch (\Exception $e) {
+                return back()->withErrors(['sale_item_error' => 'Error saving sale item: ' . $e->getMessage()]);
+            }
+    
+            // Update inventory after sale
+            try {
+                $inventory->decrement('quantity', $item['quantity']);
+            } catch (\Exception $e) {
+                return back()->withErrors(['inventory_update_error' => 'Error updating inventory: ' . $e->getMessage()]);
+            }
         }
-
-        // Price calculation
-        $base_price = $product->selling_price * $request->quantity;
-        $discount = ($request->discount_percent ?? 0) / 100;
-        $total_price = $base_price - ($base_price * $discount);
-
-        // Create sale
-        $sale = Sale::create([
-            'product_id' => $request->product_id,
-            'customer_id' => $request->customer_id,
-            'quantity' => $request->quantity,
-            'discount_percent' => $request->discount_percent ?? 0,
-            'total_price' => $total_price,
-            'sale_type' => $request->sale_type,
-        ]);
-        $validated = $request->validate([
-            'customer_name' => 'required|string',
-            'customer_phone' => 'required|string',
-            'customer_address' => 'nullable|string',
-            // other sale fields...
-        ]);
     
-        $customer = Customer::create([
-            'name' => $validated['customer_name'],
-            'phone' => $validated['customer_phone'],
-            'address' => $validated['customer_address'] ?? '',
-        ]);
-    
-        $sale = Sale::create([
-            'customer_id' => $customer->id,
-            // other sale fields...
-        ]);
-    
-        // handle sale items etc.
-    
-        return redirect()->route('sales.index')->with('success', 'Sale recorded successfully!');
-        // Update inventory
-        $product->decrement('quantity', $request->quantity);
-
-        return redirect()->route('sales.index')->with('success', 'Sale recorded successfully.');
+        return redirect()->route('sales.index')->with('success', 'Sale recorded and inventory updated successfully!');
     }
+    
+
+
 
     /**
      * Display the specified resource.

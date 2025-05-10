@@ -9,8 +9,7 @@
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{{ route('home') }}">Home</a></li>
-        <li class="breadcrumb-item">Products</li>
-        <li class="breadcrumb-item active">All</li>
+        <li class="breadcrumb-item active">Products</li>
       </ol>
     </nav>
   </div>
@@ -18,7 +17,9 @@
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
-
+        @if(session('success'))
+          <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Batteries</h5>
@@ -28,6 +29,7 @@
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>Image</th>
                   <th>Name</th>
                   <th>Type</th>
                   <th>Capacity</th>
@@ -43,11 +45,18 @@
                 @foreach ($products as $product)
                   <tr>
                     <td>{{ $loop->iteration }}</td>
+                    <td>
+                      @if ($product->product_image)
+                        <img src="{{ asset('storage/' . $product->product_image) }}" alt="Product Image" width="50" height="50" class="img-thumbnail">
+                      @else
+                        <span class="text-muted">No image</span>
+                      @endif
+                    </td>
                     <td>{{ $product->name }}</td>
                     <td>{{ $product->type }}</td>
                     <td>{{ $product->capacity }}</td>
                     <td>{{ $product->warranty_months }} months</td>
-                    <td>{{ $product->quantity }}</td>
+                    <td>{{ $product->inventory->quantity ?? '0' }}</td>
                     <td>Rs {{ $product->cost_price }}</td>
                     <td>Rs {{ $product->selling_price }}</td>
                     <td>{{ $product->vendor->name ?? 'N/A' }}</td>
