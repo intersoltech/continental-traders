@@ -2,181 +2,222 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\Product;
 use App\Models\Customer;
-use Illuminate\Http\Request;
+use App\Models\Inventory;
+use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $sales = Sale::with('product', 'customer')->latest()->get();
+        $sales = Sale::with('customer', 'saleItems.product')->latest()->get();
         return view('sales.index', compact('sales'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $products = Product::with('inventory')->get(); // Fetch associated inventory
-        $customers = Customer::all();
-        return view('sales.create', compact('products', 'customers'));
+        $products = Product::with('inventory')->get();
+        return view('sales.create', compact('products'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        dd($request->all());
-        // Validate the products array
         $request->validate([
-            'customer_id' => 'required|string',
-            'customer_name' => 'required|string',
+            'customer.name' => 'required|string|max:255',
+            'customer.contact' => 'required|string|max:255',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
-            'products.*.price' => 'required|numeric|min:0',            
+            'products.*.price' => 'required|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
+            'payment_method' => 'required|in:cash,online,card',
         ]);
-    
-        // Check if the customer exists or create a new one
-        $customer = Customer::firstOrCreate([
-            'id' => $request->customer_id
-        ], [
-            'phone' => $request->new_customer_phone,
-            'name' => $request->customer_name,
-            'address' => $request->new_customer_address,
-        ]);
-    
-        // Calculate the total sale amount
-        $totalAmount = 0;
-        foreach ($request->products as $item) {
-            $totalAmount += $item['quantity'] * $item['price'];
-        }
-    
-        // Create the sale record
+
+        DB::beginTransaction();
+
         try {
-            $sale = Sale::create([
-                'customer_id' => $customer->id,
-                'total' => $totalAmount - $request->discount, // Applying discount to total
-                'payment_method' => $request->payment_method,
-            ]);
-        } catch (\Exception $e) {
-            return back()->withErrors(['sale_error' => 'An error occurred while saving the sale: ' . $e->getMessage()]);
-        }
-    
-        // Loop through each product and create sale items, and update the inventory
-        foreach ($request->products as $item) {
-            // Fetch product and check inventory
-            $product = Product::find($item['product_id']);
-            $inventory = Inventory::where('product_id', $item['product_id'])->first();
-    
-            if (!$inventory || $inventory->quantity < $item['quantity']) {
-                // Handle insufficient inventory
-                return back()->withErrors(['inventory_error' => 'Not enough stock for product: ' . $product->name]);
-            }
-    
-            // Create sale item entry
-            try {
-                $saleItem = SaleItem::create([
-                    'sale_id' => $sale->id,
-                    'product_id' => $item['product_id'],
+            // Create or get customer
+            $customer = Customer::firstOrCreate(
+                ['name' => $request->customer['name']],
+                ['contact' => $request->customer['contact']]
+            );
+
+            $totalAmount = 0;
+            $saleItemsData = [];
+
+            // Validate inventory and calculate total
+            foreach ($request->products as $item) {
+                $product = Product::findOrFail($item['product_id']);
+                $inventory = Inventory::where('product_id', $product->id)->first();
+
+                if (!$inventory || $inventory->quantity < $item['quantity']) {
+                    throw new \Exception("Insufficient stock for product: {$product->name}");
+                }
+
+                $lineTotal = $item['price'] * $item['quantity'];
+                $totalAmount += $lineTotal;
+
+                $saleItemsData[] = [
+                    'product_id' => $product->id,
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
-                    'total' => $item['quantity'] * $item['price'],
-                ]);
-            } catch (\Exception $e) {
-                return back()->withErrors(['sale_item_error' => 'Error saving sale item: ' . $e->getMessage()]);
+                    'total' => $lineTotal,
+                ];
             }
-    
-            // Update inventory after sale
-            try {
-                $inventory->decrement('quantity', $item['quantity']);
-            } catch (\Exception $e) {
-                return back()->withErrors(['inventory_update_error' => 'Error updating inventory: ' . $e->getMessage()]);
+
+            $discount = $request->discount ?? 0;
+            $finalTotal = $totalAmount - $discount;
+
+            // Create Sale
+            $sale = Sale::create([
+                'customer_id' => $customer->id,
+                'discount' => $discount,
+                'total' => $finalTotal,
+                'payment_method' => $request->payment_method,
+                // 'pdf_path' => 'optional_path_after_pdf_generation'
+            ]);
+
+            // Create Sale Items and update inventory
+            foreach ($saleItemsData as $itemData) {
+                $itemData['sale_id'] = $sale->id;
+                SaleItem::create($itemData);
+
+                $inventory = Inventory::where('product_id', $itemData['product_id'])->first();
+                $inventory->decrement('quantity', $itemData['quantity']);
             }
+
+            DB::commit();
+
+            return redirect()->route('sales.index')->with('success', 'Sale created successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Sale failed: ' . $e->getMessage()])->withInput();
         }
-    
-        return redirect()->route('sales.index')->with('success', 'Sale recorded and inventory updated successfully!');
     }
-    
 
-
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Sale $sale)
+    public function edit($id)
     {
-        return view('sales.show', compact('sale'));
+        $sale = Sale::with('saleItems.product')->findOrFail($id);
+        $products = Product::with('inventory')->get();
+        return view('sales.edit', compact('sale', 'products'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Sale $sale)
-    {
-        $sale->load('items');
-        $products = Product::all();
-        $customers = Customer::all();
-        return view('sales.edit', compact('sale', 'products', 'customers'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Sale $sale)
+    public function update(Request $request, $id)
     {
         $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'customer_id' => 'required|exists:customers,id',
-            'quantity' => 'required|integer|min:1',
-            'discount_percent' => 'nullable|in:0,2,4,6',
-            'sale_type' => 'required|in:cash,online,card',
+            'customer.name' => 'required|string|max:255',
+            'customer.contact' => 'required|string|max:255',
+            'products.*.product_id' => 'required|exists:products,id',
+            'products.*.quantity' => 'required|integer|min:1',
+            'products.*.price' => 'required|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
+            'payment_method' => 'required|in:cash,online,card',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
+        DB::beginTransaction();
 
-        // Adjust stock: restore old, subtract new
-        $product->increment('quantity', $sale->quantity); // rollback previous sale quantity
-        if ($product->quantity < $request->quantity) {
-            return back()->with('error', 'Not enough stock available for updated sale.');
+        try {
+            $sale = Sale::with('saleItems')->findOrFail($id);
+
+            // Restore inventory from previous sale items
+            foreach ($sale->saleItems as $item) {
+                $inventory = Inventory::where('product_id', $item->product_id)->first();
+                if ($inventory) {
+                    $inventory->increment('quantity', $item->quantity);
+                }
+            }
+
+            // Delete old sale items
+            $sale->saleItems()->delete();
+
+            // Recreate customer if changed
+            $customer = Customer::firstOrCreate(
+                ['name' => $request->customer['name']],
+                ['contact' => $request->customer['contact']]
+            );
+
+            $totalAmount = 0;
+            $saleItemsData = [];
+
+            // Re-validate inventory and calculate new total
+            foreach ($request->products as $item) {
+                $product = Product::findOrFail($item['product_id']);
+                $inventory = Inventory::where('product_id', $product->id)->first();
+
+                if (!$inventory || $inventory->quantity < $item['quantity']) {
+                    throw new \Exception("Insufficient stock for product: {$product->name}");
+                }
+
+                $lineTotal = $item['price'] * $item['quantity'];
+                $totalAmount += $lineTotal;
+
+                $saleItemsData[] = [
+                    'product_id' => $product->id,
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'total' => $lineTotal,
+                ];
+            }
+
+            $discount = $request->discount ?? 0;
+            $finalTotal = $totalAmount - $discount;
+
+            // Update Sale
+            $sale->update([
+                'customer_id' => $customer->id,
+                'discount' => $discount,
+                'total' => $finalTotal,
+                'payment_method' => $request->payment_method,
+                // 'pdf_path' => 'optional_path_after_pdf_generation'
+            ]);
+
+            // Create new sale items and adjust inventory
+            foreach ($saleItemsData as $itemData) {
+                $itemData['sale_id'] = $sale->id;
+                SaleItem::create($itemData);
+
+                $inventory = Inventory::where('product_id', $itemData['product_id'])->first();
+                $inventory->decrement('quantity', $itemData['quantity']);
+            }
+
+            DB::commit();
+
+            return redirect()->route('sales.index')->with('success', 'Sale updated successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Sale update failed: ' . $e->getMessage()])->withInput();
         }
-
-        $base_price = $product->selling_price * $request->quantity;
-        $discount = ($request->discount_percent ?? 0) / 100;
-        $total_price = $base_price - ($base_price * $discount);
-
-        $sale->update([
-            'product_id' => $request->product_id,
-            'customer_id' => $request->customer_id,
-            'quantity' => $request->quantity,
-            'discount_percent' => $request->discount_percent ?? 0,
-            'total_price' => $total_price,
-            'sale_type' => $request->sale_type,
-        ]);
-
-        // Subtract new quantity
-        $product->decrement('quantity', $request->quantity);
-
-        return redirect()->route('sales.index')->with('success', 'Sale updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Sale $sale)
+    public function destroy($id)
     {
-        $product = Product::find($sale->product_id);
-        if ($product) {
-            $product->increment('quantity', $sale->quantity); // restore inventory
-        }
+        DB::beginTransaction();
 
-        $sale->delete();
-        return redirect()->route('sales.index')->with('success', 'Sale deleted successfully.');
+        try {
+            $sale = Sale::with('saleItems')->findOrFail($id);
+
+            // Restore inventory
+            foreach ($sale->saleItems as $item) {
+                $inventory = Inventory::where('product_id', $item->product_id)->first();
+                if ($inventory) {
+                    $inventory->increment('quantity', $item->quantity);
+                }
+            }
+
+            $sale->saleItems()->delete();
+            $sale->delete();
+
+            DB::commit();
+
+            return redirect()->route('sales.index')->with('success', 'Sale deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Sale deletion failed: ' . $e->getMessage()]);
+        }
     }
 }
