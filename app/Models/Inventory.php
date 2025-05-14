@@ -22,14 +22,16 @@ class Inventory extends Model
     // This method can be useful when incrementing inventory directly.
     public function incrementQuantity($quantity)
     {
-        $this->quantity += $quantity;
-        $this->save();
+        return $this->increment('quantity', $quantity);
     }
+
 
     // This method can be useful for decrementing inventory.
     public function decrementQuantity($quantity)
     {
-        $this->quantity -= $quantity;
-        $this->save();
+        if ($this->quantity < $quantity) {
+            throw new \Exception('Insufficient inventory');
+        }
+        return $this->decrement('quantity', $quantity);
     }
 }
