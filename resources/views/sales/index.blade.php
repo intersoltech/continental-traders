@@ -39,11 +39,14 @@
                                     @foreach ($sales as $sale)
                                         <tr>
                                             <td>
-                                                <button class="btn btn-sm btn-secondary" data-bs-toggle="collapse"
-                                                    data-bs-target="#sale-items-{{ $sale->id }}" aria-expanded="false"
-                                                    aria-controls="sale-items-{{ $sale->id }}">
-                                                    <i class="bi bi-chevron-down"></i>
-                                                </button>
+                                                <strong>Sold Items:</strong>
+                                                <ul class="mt-2">
+                                                    @foreach ($sale->saleItems as $item)
+                                                        <li>{{ $item->product->name }} — Qty: {{ $item->quantity }},
+                                                            Price: Rs {{ number_format($item->price, 2) }}, Total: Rs
+                                                            {{ number_format($item->total, 2) }}</li>
+                                                    @endforeach
+                                                </ul>
                                             </td>
                                             <td>{{ $loop->iteration }}</td>
                                             <td>{{ $sale->customer->name }}</td>
@@ -61,21 +64,7 @@
                                                         onclick="return confirm('Are you sure?')">Delete</button>
                                                 </form>
                                             </td>
-                                        </tr>
-
-                                        <!-- Collapsible row for items -->
-                                        <tr class="collapse" id="sale-items-{{ $sale->id }}">
-                                            <td colspan="7">
-                                                <strong>Sold Items:</strong>
-                                                <ul class="mt-2">
-                                                    @foreach ($sale->items as $item)
-                                                        <li>{{ $item->product->name }} — Qty: {{ $item->quantity }},
-                                                            Price: Rs {{ number_format($item->price, 2) }}, Total: Rs
-                                                            {{ number_format($item->total, 2) }}</li>
-                                                    @endforeach
-                                                </ul>
-                                            </td>
-                                        </tr>
+                                        </tr>                                        
                                     @endforeach
                                 </tbody>
                             </table>

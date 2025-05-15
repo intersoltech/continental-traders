@@ -98,6 +98,7 @@
 @push('scripts')
 <script>
     let products = @json($products);
+    let productIndex = 0; 
 
     // Add one row on page load to help user
     document.addEventListener('DOMContentLoaded', () => {
@@ -108,7 +109,7 @@
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
-                <select name="products[][product_id]" class="form-control" onchange="updatePrice(this)" required>
+                <select name="products[${productIndex}][product_id]" class="form-control" onchange="updatePrice(this)" required>
                     <option value="" selected disabled>Select Product</option>
                     ${products.map(p => `<option value="${p.id}" data-cost="${p.cost_price}" data-price="${p.selling_price}" data-quantity="${p.inventory ? p.inventory.quantity : 0}">
                         ${p.name} (In stock: ${p.inventory ? p.inventory.quantity : 0})
@@ -117,9 +118,9 @@
             </td>
             <td><input type="number" class="form-control cost-price" readonly></td>
             <td><input type="number" class="form-control selling-price" readonly></td>
-            <td><input type="number" name="products[][price]" class="form-control custom-price" oninput="updateSubtotal(this)" required></td>
-            <td><input type="number" name="products[][quantity]" class="form-control quantity" oninput="updateSubtotal(this)" min="1" required></td>
-            <td><input type="number" name="products[][subtotal]" class="form-control subtotal" readonly></td>
+            <td><input type="number" name="products[${productIndex}][price]" class="form-control custom-price" oninput="updateSubtotal(this)" required></td>
+            <td><input type="number" name="products[${productIndex}][quantity]" class="form-control quantity" oninput="updateSubtotal(this)" min="1" required></td>
+            <td><input type="number" name="products[${productIndex}][subtotal]" class="form-control subtotal" readonly></td>
             <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); updateTotal();">X</button></td>
         `;
         document.querySelector("#products-table tbody").appendChild(row);
@@ -134,7 +135,7 @@
         row.querySelector('.cost-price').value = costPrice;
         row.querySelector('.selling-price').value = sellingPrice;
 
-        const customPrice = row.querySelector('input[name="products[][price]"]');
+        const customPrice = row.querySelector(`input[name="products[${productIndex}][price]"]`);
         customPrice.value = sellingPrice;
 
         updateSubtotal(customPrice);
@@ -142,8 +143,8 @@
 
     function updateSubtotal(input) {
         const row = input.closest('tr');
-        const price = parseFloat(row.querySelector('input[name="products[][price]"]').value || 0);
-        const qty = parseFloat(row.querySelector('input[name="products[][quantity]"]').value || 0);
+        const price = parseFloat(row.querySelector(`input[name="products[${productIndex}][price]"]`).value || 0);
+        const qty = parseFloat(row.querySelector(`input[name="products[${productIndex}][quantity]"]`).value || 0);
         row.querySelector('.subtotal').value = (price * qty).toFixed(2);
         updateTotal();
     }
@@ -176,9 +177,9 @@
         }
 
         for (let row of rows) {
-            const productSelect = row.querySelector('select[name="products[][product_id]"]');
-            const priceInput = row.querySelector('input[name="products[][price]"]');
-            const qtyInput = row.querySelector('input[name="products[][quantity]"]');
+            const productSelect = row.querySelector(`select[name="products[${productIndex}][product_id]"]`);
+            const priceInput = row.querySelector(`input[name="products[${productIndex}][price]"]`);
+            const qtyInput = row.querySelector(`input[name="products[${productIndex}][quantity]"]`);
 
             if (!productSelect.value) {
                 alert('Please select a product for each row.');
