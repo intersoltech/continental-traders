@@ -26,9 +26,13 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
+        // dd($request->all());
+        // Step 1: Validate
         $request->validate([
-            'customer.name' => 'required|string|max:255',
-            'customer.contact' => 'required|string|max:255',
+            'customer_id' => 'nullable|exists:customers,id',
+            'customer_name' => 'required_without:customer_id|string|max:255',
+            'new_customer_phone' => 'required_without:customer_id|string|max:255',
+            'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,id',
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.price' => 'required|numeric|min:0',
@@ -39,63 +43,64 @@ class SaleController extends Controller
         DB::beginTransaction();
 
         try {
-            // Create or get customer
-            $customer = Customer::firstOrCreate(
-                ['name' => $request->customer['name']],
-                ['contact' => $request->customer['contact']]
-            );
+            // Step 3: Create or find customer
+            if ($request->customer_id) {
+                $customer = Customer::findOrFail($request->customer_id);
+            } else {
+                $customer = Customer::create([
+                    'name' => $request->customer_name,
+                    'phone' => $request->new_customer_phone,
+                    'address' => $request->new_customer_address,
+                ]);
+            }
 
+            // Step 4: Check inventory and calculate totals
             $totalAmount = 0;
-            $saleItemsData = [];
-
-            // Validate inventory and calculate total
             foreach ($request->products as $item) {
-                $product = Product::findOrFail($item['product_id']);
-                $inventory = Inventory::where('product_id', $product->id)->first();
+                $inventory = Inventory::where('product_id', $item['product_id'])->first();
 
                 if (!$inventory || $inventory->quantity < $item['quantity']) {
-                    throw new \Exception("Insufficient stock for product: {$product->name}");
+                    throw new \Exception("Not enough stock for product ID: {$item['product_id']}");
                 }
 
-                $lineTotal = $item['price'] * $item['quantity'];
-                $totalAmount += $lineTotal;
-
-                $saleItemsData[] = [
-                    'product_id' => $product->id,
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'total' => $lineTotal,
-                ];
+                $totalAmount += $item['price'] * $item['quantity'];
             }
 
             $discount = $request->discount ?? 0;
             $finalTotal = $totalAmount - $discount;
 
-            // Create Sale
+            // Step 5: Create sale
             $sale = Sale::create([
                 'customer_id' => $customer->id,
                 'discount' => $discount,
                 'total' => $finalTotal,
                 'payment_method' => $request->payment_method,
-                // 'pdf_path' => 'optional_path_after_pdf_generation'
             ]);
 
-            // Create Sale Items and update inventory
-            foreach ($saleItemsData as $itemData) {
-                $itemData['sale_id'] = $sale->id;
-                SaleItem::create($itemData);
+            // Step 6: Create sale items and decrement inventory
+            foreach ($request->products as $item) {
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'total' => $item['price'] * $item['quantity'],
+                ]);
 
-                $inventory = Inventory::where('product_id', $itemData['product_id'])->first();
-                $inventory->decrement('quantity', $itemData['quantity']);
+                // Decrement inventory
+                $inventory = Inventory::where('product_id', $item['product_id'])->first();
+                $inventory->decrement('quantity', $item['quantity']);
             }
 
+            // Step 7: Commit
             DB::commit();
 
             return redirect()->route('sales.index')->with('success', 'Sale created successfully.');
 
         } catch (\Exception $e) {
+            // Step 8: Rollback on error
             DB::rollBack();
-            return back()->withErrors(['error' => 'Sale failed: ' . $e->getMessage()])->withInput();
+            return back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
     }
 
@@ -108,6 +113,7 @@ class SaleController extends Controller
 
     public function update(Request $request, $id)
     {
+        
         $request->validate([
             'customer.name' => 'required|string|max:255',
             'customer.contact' => 'required|string|max:255',

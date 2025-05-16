@@ -24,7 +24,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Sales Form</h5>
-                        <form action="{{ route('sales.store') }}" method="POST" onsubmit="return validateSaleForm()">
+                        <form action="{{ route('sales.store') }}" method="POST" id="sale-form">
                             @csrf
 
                             <!-- Customer Selection -->
@@ -67,7 +67,7 @@
                                 <tbody></tbody>
                             </table>
 
-                            <button type="button" class="btn btn-secondary" onclick="addRow()">Add Product</button>
+                            <button type="button" class="btn btn-secondary mb-3" onclick="addRow()">Add Product</button>
 
                             <div class="mb-3 mt-3">
                                 <label>Discount</label>
@@ -98,13 +98,19 @@
 @push('scripts')
 <script>
     let products = @json($products);
+    let productIndex = 0; 
+
+    // Add one row on page load to help user
+    document.addEventListener('DOMContentLoaded', () => {
+        addRow();
+    });
 
     function addRow() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
-                <select name="products[][product_id]" class="form-control" onchange="updatePrice(this)">
-                    <option selected>Select Product</option>
+                <select name="products[${productIndex}][product_id]" class="form-control" onchange="updatePrice(this)" required>
+                    <option value="" selected disabled>Select Product</option>
                     ${products.map(p => `<option value="${p.id}" data-cost="${p.cost_price}" data-price="${p.selling_price}" data-quantity="${p.inventory ? p.inventory.quantity : 0}">
                         ${p.name} (In stock: ${p.inventory ? p.inventory.quantity : 0})
                     </option>`).join('')}
@@ -112,9 +118,9 @@
             </td>
             <td><input type="number" class="form-control cost-price" readonly></td>
             <td><input type="number" class="form-control selling-price" readonly></td>
-            <td><input type="number" name="products[][price]" class="form-control custom-price" oninput="updateSubtotal(this)"></td>
-            <td><input type="number" name="products[][quantity]" class="form-control quantity" oninput="updateSubtotal(this)"></td>
-            <td><input type="number" name="products[][subtotal]" class="form-control subtotal" readonly></td>
+            <td><input type="number" name="products[${productIndex}][price]" class="form-control custom-price" oninput="updateSubtotal(this)" required></td>
+            <td><input type="number" name="products[${productIndex}][quantity]" class="form-control quantity" oninput="updateSubtotal(this)" min="1" required></td>
+            <td><input type="number" name="products[${productIndex}][subtotal]" class="form-control subtotal" readonly></td>
             <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); updateTotal();">X</button></td>
         `;
         document.querySelector("#products-table tbody").appendChild(row);
@@ -129,7 +135,7 @@
         row.querySelector('.cost-price').value = costPrice;
         row.querySelector('.selling-price').value = sellingPrice;
 
-        const customPrice = row.querySelector('input[name="products[][price]"]');
+        const customPrice = row.querySelector(`input[name="products[${productIndex}][price]"]`);
         customPrice.value = sellingPrice;
 
         updateSubtotal(customPrice);
@@ -137,8 +143,8 @@
 
     function updateSubtotal(input) {
         const row = input.closest('tr');
-        const price = parseFloat(row.querySelector('input[name="products[][price]"]').value || 0);
-        const qty = parseFloat(row.querySelector('input[name="products[][quantity]"]').value || 0);
+        const price = parseFloat(row.querySelector(`input[name="products[${productIndex}][price]"]`).value || 0);
+        const qty = parseFloat(row.querySelector(`input[name="products[${productIndex}][quantity]"]`).value || 0);
         row.querySelector('.subtotal').value = (price * qty).toFixed(2);
         updateTotal();
     }
@@ -162,6 +168,7 @@
         updateTotal();
     }
 
+    // Validate form inputs before submission
     function validateSaleForm() {
         const rows = document.querySelectorAll('#products-table tbody tr');
         if (rows.length === 0) {
@@ -170,16 +177,59 @@
         }
 
         for (let row of rows) {
-            const qty = parseFloat(row.querySelector('input[name="products[][quantity]"]').value || 0);
-            if (qty <= 0) {
+            const productSelect = row.querySelector(`select[name="products[${productIndex}][product_id]"]`);
+            const priceInput = row.querySelector(`input[name="products[${productIndex}][price]"]`);
+            const qtyInput = row.querySelector(`input[name="products[${productIndex}][quantity]"]`);
+
+            if (!productSelect.value) {
+                alert('Please select a product for each row.');
+                return false;
+            }
+
+            if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
+                alert('Please enter a valid price for each product.');
+                return false;
+            }
+
+            if (!qtyInput.value || parseFloat(qtyInput.value) <= 0) {
                 alert('Each product must have a quantity greater than 0.');
                 return false;
             }
         }
 
+        const customerId = document.getElementById('customer-id').value;
+        const newCustomerName = document.getElementById('new-customer-name').value.trim();
+        const newCustomerPhone = document.getElementById('new-customer-phone').value.trim();
+
+        if (!customerId && (!newCustomerName || !newCustomerPhone)) {
+            alert('Please select an existing customer or fill in new customer details.');
+            return false;
+        }
+
         return true;
     }
 
+    // Remove empty product rows on submit
+    function cleanEmptyProductRows() {
+        const rows = document.querySelectorAll('#products-table tbody tr');
+        rows.forEach(row => {
+            const select = row.querySelector('select[name^="products"]');
+            const qty = row.querySelector('input[name^="products"][name$="[quantity]"]').value;
+            if (!select.value || qty === '' || qty <= 0) {
+                row.remove();
+            }
+        });
+    }
+
+    // Attach submit event to clean rows and validate form
+    document.getElementById('sale-form').addEventListener('submit', function(event) {
+        cleanEmptyProductRows();
+        if (!validateSaleForm()) {
+            event.preventDefault();
+        }
+    });
+
+    // Customer search function
     function searchCustomer() {
         const phone = document.getElementById('customer-phone').value;
 
@@ -203,6 +253,7 @@
             });
     }
 
+    // Select customer from search results
     function selectCustomer(id, name, phone) {
         document.getElementById('customer-id').value = id;
         document.getElementById('customer-phone').value = phone;
