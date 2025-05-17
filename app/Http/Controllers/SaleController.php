@@ -57,7 +57,9 @@ class SaleController extends Controller
 
             // Step 4: Check inventory and calculate totals
             $totalAmount = 0;
-            foreach ($request->products as $item) {
+            $products = $request->input('products', []);
+            // dd($products);
+            foreach ($products as $item) {
                 $inventory = Inventory::where('product_id', $item['product_id'])->first();
 
                 if (!$inventory || $inventory->quantity < $item['quantity']) {
@@ -79,7 +81,7 @@ class SaleController extends Controller
             ]);
 
             // Step 6: Create sale items and decrement inventory
-            foreach ($request->products as $item) {
+            foreach ($products as $item) {
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
@@ -149,9 +151,10 @@ class SaleController extends Controller
 
             $totalAmount = 0;
             $saleItemsData = [];
+            $products = $request->input('products', []);
 
             // Re-validate inventory and calculate new total
-            foreach ($request->products as $item) {
+            foreach ($products as $item) {
                 $product = Product::findOrFail($item['product_id']);
                 $inventory = Inventory::where('product_id', $product->id)->first();
 

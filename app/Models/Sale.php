@@ -35,7 +35,7 @@ class Sale extends Model
     protected static function booted()
     {
         static::created(function ($sale) {
-            foreach ($sale->items as $item) {
+            foreach ($sale->saleItems as $item) {
                 $inventory = $item->product->inventory;
                 if ($inventory) {
                     $inventory->decrement('quantity', $item->quantity);
@@ -44,7 +44,7 @@ class Sale extends Model
         });
 
         static::deleting(function ($sale) {
-            foreach ($sale->items as $item) {
+            foreach ($sale->saleItems as $item) {
                 $inventory = $item->product->inventory;
                 if ($inventory) {
                     $inventory->increment('quantity', $item->quantity);

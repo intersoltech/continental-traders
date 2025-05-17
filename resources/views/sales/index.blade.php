@@ -26,8 +26,9 @@
                             <table class="table datatable">
                                 <thead>
                                     <tr>
-                                        <th></th> <!-- For the toggle button -->
+                                        <th><strong>Sold Items</strong></th> <!-- For the toggle button -->
                                         <th>#</th>
+                                        <th>Sale ID</th>
                                         <th>Customer</th>
                                         <th>Date</th>
                                         <th>Total Amount</th>
@@ -38,17 +39,17 @@
                                 <tbody>
                                     @foreach ($sales as $sale)
                                         <tr>
-                                            <td>
-                                                <strong>Sold Items:</strong>
-                                                <ul class="mt-2">
+                                            <td>                                                
+                                                <ol class="mt-2" type="1">
                                                     @foreach ($sale->saleItems as $item)
                                                         <li>{{ $item->product->name }} — Qty: {{ $item->quantity }},
                                                             Price: Rs {{ number_format($item->price, 2) }}, Total: Rs
                                                             {{ number_format($item->total, 2) }}</li>
                                                     @endforeach
-                                                </ul>
+                                                </ol>
                                             </td>
                                             <td>{{ $loop->iteration }}</td>
+                                            <td>{{ $sale->id }}</td>
                                             <td>{{ $sale->customer->name }}</td>
                                             <td>{{ $sale->created_at->toDateString() }}</td>
                                             <td>{{ number_format($sale->total, 2) }}</td>
