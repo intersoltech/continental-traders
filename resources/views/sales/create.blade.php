@@ -105,11 +105,14 @@
         addRow();
     });
 
-    function addRow() {
+    function addRow() 
+    {
+        const currentIndex = productIndex++; // Increment the global index
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
-                <select name="products[${productIndex}][product_id]" class="form-control" onchange="updatePrice(this)" required>
+                <select name="products[${currentIndex}][product_id]" class="form-control" onchange="updatePrice(this, ${currentIndex})" required>
                     <option value="" selected disabled>Select Product</option>
                     ${products.map(p => `<option value="${p.id}" data-cost="${p.cost_price}" data-price="${p.selling_price}" data-quantity="${p.inventory ? p.inventory.quantity : 0}">
                         ${p.name} (In stock: ${p.inventory ? p.inventory.quantity : 0})
@@ -118,15 +121,17 @@
             </td>
             <td><input type="number" class="form-control cost-price" readonly></td>
             <td><input type="number" class="form-control selling-price" readonly></td>
-            <td><input type="number" name="products[${productIndex}][price]" class="form-control custom-price" oninput="updateSubtotal(this)" required></td>
-            <td><input type="number" name="products[${productIndex}][quantity]" class="form-control quantity" oninput="updateSubtotal(this)" min="1" required></td>
-            <td><input type="number" name="products[${productIndex}][subtotal]" class="form-control subtotal" readonly></td>
+            <td><input type="number" name="products[${currentIndex}][price]" class="form-control custom-price" oninput="updateSubtotal(this)" required></td>
+            <td><input type="number" name="products[${currentIndex}][quantity]" class="form-control quantity" oninput="updateSubtotal(this)" min="1" required></td>
+            <td><input type="number" name="products[${currentIndex}][subtotal]" class="form-control subtotal" readonly></td>
             <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); updateTotal();">X</button></td>
         `;
         document.querySelector("#products-table tbody").appendChild(row);
     }
 
-    function updatePrice(select) {
+
+    function updatePrice(select, index) 
+    {
         const row = select.closest('tr');
         const selected = select.selectedOptions[0];
         const costPrice = selected.dataset.cost || 0;
@@ -135,19 +140,26 @@
         row.querySelector('.cost-price').value = costPrice;
         row.querySelector('.selling-price').value = sellingPrice;
 
-        const customPrice = row.querySelector(`input[name="products[${productIndex}][price]"]`);
+        const customPrice = row.querySelector(`input[name="products[${index}][price]"]`);
         customPrice.value = sellingPrice;
 
         updateSubtotal(customPrice);
     }
 
+
     function updateSubtotal(input) {
-        const row = input.closest('tr');
-        const price = parseFloat(row.querySelector(`input[name="products[${productIndex}][price]"]`).value || 0);
-        const qty = parseFloat(row.querySelector(`input[name="products[${productIndex}][quantity]"]`).value || 0);
-        row.querySelector('.subtotal').value = (price * qty).toFixed(2);
-        updateTotal();
-    }
+    const row = input.closest('tr');
+
+    const priceInput = row.querySelector('input[name*="[price]"]');
+    const quantityInput = row.querySelector('input[name*="[quantity]"]');
+
+    const price = parseFloat(priceInput?.value || 0);
+    const qty = parseFloat(quantityInput?.value || 0);
+
+    row.querySelector('.subtotal').value = (price * qty).toFixed(2);
+    updateTotal();
+}
+
 
     function updateTotal() {
         let total = 0;
@@ -170,44 +182,45 @@
 
     // Validate form inputs before submission
     function validateSaleForm() {
-        const rows = document.querySelectorAll('#products-table tbody tr');
-        if (rows.length === 0) {
-            alert('Please add at least one product.');
-            return false;
-        }
-
-        for (let row of rows) {
-            const productSelect = row.querySelector(`select[name="products[${productIndex}][product_id]"]`);
-            const priceInput = row.querySelector(`input[name="products[${productIndex}][price]"]`);
-            const qtyInput = row.querySelector(`input[name="products[${productIndex}][quantity]"]`);
-
-            if (!productSelect.value) {
-                alert('Please select a product for each row.');
-                return false;
-            }
-
-            if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
-                alert('Please enter a valid price for each product.');
-                return false;
-            }
-
-            if (!qtyInput.value || parseFloat(qtyInput.value) <= 0) {
-                alert('Each product must have a quantity greater than 0.');
-                return false;
-            }
-        }
-
-        const customerId = document.getElementById('customer-id').value;
-        const newCustomerName = document.getElementById('new-customer-name').value.trim();
-        const newCustomerPhone = document.getElementById('new-customer-phone').value.trim();
-
-        if (!customerId && (!newCustomerName || !newCustomerPhone)) {
-            alert('Please select an existing customer or fill in new customer details.');
-            return false;
-        }
-
-        return true;
+    const rows = document.querySelectorAll('#products-table tbody tr');
+    if (rows.length === 0) {
+        alert('Please add at least one product.');
+        return false;
     }
+
+    for (let row of rows) {
+        const productSelect = row.querySelector('select[name^="products"]');
+        const priceInput = row.querySelector('input[name*="[price]"]');
+        const qtyInput = row.querySelector('input[name*="[quantity]"]');
+
+        if (!productSelect?.value) {
+            alert('Please select a product for each row.');
+            return false;
+        }
+
+        if (!priceInput?.value || parseFloat(priceInput.value) <= 0) {
+            alert('Please enter a valid price for each product.');
+            return false;
+        }
+
+        if (!qtyInput?.value || parseFloat(qtyInput.value) <= 0) {
+            alert('Each product must have a quantity greater than 0.');
+            return false;
+        }
+    }
+
+    const customerId = document.getElementById('customer-id').value;
+    const newCustomerName = document.getElementById('new-customer-name').value.trim();
+    const newCustomerPhone = document.getElementById('new-customer-phone').value.trim();
+
+    if (!customerId && (!newCustomerName || !newCustomerPhone)) {
+        alert('Please select an existing customer or fill in new customer details.');
+        return false;
+    }
+
+    return true;
+}
+
 
     // Remove empty product rows on submit
     function cleanEmptyProductRows() {

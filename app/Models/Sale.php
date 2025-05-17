@@ -27,6 +27,11 @@ class Sale extends Model
         return $this->hasMany(SaleItem::class);
     }
 
+    public function products()
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
     protected static function booted()
     {
         static::created(function ($sale) {

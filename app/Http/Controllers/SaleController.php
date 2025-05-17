@@ -27,6 +27,7 @@ class SaleController extends Controller
     public function store(Request $request)
     {
         // dd($request->all());
+        // dd($request->products);
         // Step 1: Validate
         $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
