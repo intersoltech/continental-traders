@@ -265,6 +265,12 @@
             <i class="bi bi-circle"></i><span>Download PDF Report</span>
           </a>
         </li>
+        <!-- Daily Sales Report -->
+        <li class="nav-item">
+          <a class="nav-link {{ request()->is('sales/daily-report*') ? 'active' : '' }}" href="{{ route('sales.dailyReport', ['date' => \Carbon\Carbon::today()->toDateString()]) }}">
+            <i class="bi bi-file-text"></i><span>Daily Sales Report</span>
+          </a>
+        </li><!-- End Daily Sales Report Nav -->
       </ul>
     </li><!-- End Reports Nav -->
 
