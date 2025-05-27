@@ -13,9 +13,9 @@
                 <tr>
                     <th>Name</th>
                     <th>Qty</th>
-                    <th>Cash</th>
                     <th>Bill No.</th>
-                    <th>Bank</th>
+                    {{-- <th>Bank</th> --}}
+                    <th>Cash</th>
                     <th>Online</th>
                     <th>POS</th>
                     <th>Type</th>
@@ -27,9 +27,9 @@
                     <tr>
                         <td>{{ $data['name'] }}</td>
                         <td>{{ $data['qty'] }}</td>
-                        <td>{{ number_format($data['cash'], 2) }}</td>
                         <td>{{ $data['bill_no'] }}</td>
-                        <td>{{ number_format($data['bank'], 2) }}</td>
+                        {{-- <td>{{ number_format($data['bank'], 2) }}</td> --}}
+                        <td>{{ number_format($data['cash'], 2) }}</td>
                         <td>{{ number_format($data['online'], 2) }}</td>
                         <td>{{ number_format($data['pos'], 2) }}</td>
                         <td>{{ $data['type'] }}</td>

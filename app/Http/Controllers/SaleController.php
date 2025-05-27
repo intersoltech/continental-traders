@@ -272,7 +272,7 @@ class SaleController extends Controller
                         'qty' => 0,
                         'cash' => 0,
                         'bill_no' => $sale->id, // you can modify this to your bill number logic
-                        'bank' => $sale->payment_method == 'card' ? $sale->total : 0,
+                        // 'bank' => $sale->payment_method == 'card' ? $sale->total : 0,
                         'online' => $sale->payment_method == 'online' ? $sale->total : 0,
                         'pos' => $sale->payment_method == 'card' ? $sale->total : 0,
                         'type' => $item->product->type,
