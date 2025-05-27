@@ -10,9 +10,9 @@
     </style>
 </head>
 <body>
-    <div style="text-align: center">
-        <img src="{{ asset('assets/img/logo-full.png') }}" alt="Big Logo">
-    </div>
+    <h1 style="text-align: center">
+        <img src="{{ asset('assets/img/logo-full.png') }}" alt="Continental Traders">
+    </h1>
     <h2>Daily Sales Report - {{ $date }}</h2>
 
     <table>
