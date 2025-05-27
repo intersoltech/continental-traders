@@ -1,42 +1,65 @@
 @extends('layouts.app')
 
+@section('title', 'Daily Sale Report')
+
 @section('content')
 <main id="main" class="main">
     <div class="pagetitle">
         <h1>Daily Sale Report</h1>
         <p>Date: {{ \Carbon\Carbon::parse($date)->format('d.m.Y') }}</p>
-    </div>
+    </div>    
 
     <section class="section">
         <table class="table table-bordered" style="font-size: 12px;">
             <thead style="background-color: #c4d9f0;">
                 <tr>
-                    <th>Name</th>
-                    <th>Qty</th>
                     <th>Bill No.</th>
-                    {{-- <th>Bank</th> --}}
+                    <th>Customer</th>
+                    <th>Type</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
                     <th>Cash</th>
                     <th>Online</th>
                     <th>POS</th>
-                    <th>Type</th>
-                    <th>Scrape</th>
+                    <th>Amount</th>
                 </tr>
             </thead>
+            @php
+                $totalCash = 0;
+                $totalOnline = 0;
+                $totalPos = 0;
+                $totalAmount = 0;
+            @endphp
             <tbody>
                 @foreach($reportData as $data)
+                    @php
+                        $totalCash += $data['cash'];
+                        $totalOnline += $data['online'];
+                        $totalPos += $data['pos'];
+                        $totalAmount += $data['amount'];
+                    @endphp
                     <tr>
-                        <td>{{ $data['name'] }}</td>
-                        <td>{{ $data['qty'] }}</td>
                         <td>{{ $data['bill_no'] }}</td>
-                        {{-- <td>{{ number_format($data['bank'], 2) }}</td> --}}
+                        <td>{{ $data['customer'] }}</td>
+                        <td>{{ $data['type'] }}</td>
+                        <td>{{ $data['product'] }}</td>
+                        <td>{{ $data['qty'] }}</td>
                         <td>{{ number_format($data['cash'], 2) }}</td>
                         <td>{{ number_format($data['online'], 2) }}</td>
                         <td>{{ number_format($data['pos'], 2) }}</td>
-                        <td>{{ $data['type'] }}</td>
-                        <td>{{ $data['scrape'] }}</td>
+                        <td>{{ number_format($data['amount'], 2) }}</td>
                     </tr>
                 @endforeach
             </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="5" class="text-end">Totals:</th>
+                    <th>{{ number_format($totalCash, 2) }}</th>
+                    <th>{{ number_format($totalOnline, 2) }}</th>
+                    <th>{{ number_format($totalPos, 2) }}</th>
+                    <th>{{ number_format($totalAmount, 2) }}</th>                    
+                </tr>
+            </tfoot>
         </table>
 
         <button onclick="window.print()" class="btn btn-primary mt-3">Print Report</button>

@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Inventory;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use PDF; 
 
 
 class SaleController extends Controller
@@ -238,14 +239,14 @@ class SaleController extends Controller
             return back()->withErrors(['error' => 'Sale deletion failed: ' . $e->getMessage()]);
         }
     }
+
     public function receipt(Sale $sale)
     {
         // Eager load customer and sale items with products
         $sale->load('customer', 'saleItems.product');
 
         return view('sales.receipt', compact('sale'));
-    }
-    
+    }    
 
     public function dailyReport($date = null)
     {
@@ -256,27 +257,77 @@ class SaleController extends Controller
             ->whereDate('created_at', $date)
             ->get();
 
-        // Aggregate data for the report
         $reportData = [];
 
         foreach ($sales as $sale) {
             foreach ($sale->saleItems as $item) {
                 $customerName = $sale->customer->name ?? 'Unknown';
+                $productName = $item->product->name ?? 'Unknown';
+                $productType = $item->product->type ?? 'Unknown';
 
-                // Group by customer and product type
-                $key = $customerName . '|' . $item->product->type;
+                // Unique key by customer and product or just product as you prefer
+                $key = $customerName . '|' . $productName;
 
                 if (!isset($reportData[$key])) {
                     $reportData[$key] = [
-                        'name' => $customerName,
+                        'customer' => $customerName,
+                        'product' => $productName,
+                        'type' => $productType,
                         'qty' => 0,
                         'cash' => 0,
-                        'bill_no' => $sale->id, // you can modify this to your bill number logic
-                        // 'bank' => $sale->payment_method == 'card' ? $sale->total : 0,
-                        'online' => $sale->payment_method == 'online' ? $sale->total : 0,
-                        'pos' => $sale->payment_method == 'card' ? $sale->total : 0,
+                        'online' => 0,
+                        'pos' => 0,
+                        'amount' => 0,
+                        'bill_no' => $sale->id, // adjust if you have bill number field
+                    ];
+                }
+
+                $lineAmount = $item->price * $item->quantity;
+
+                $reportData[$key]['qty'] += $item->quantity;
+                $reportData[$key]['amount'] += $lineAmount;
+
+                // Assign payment method amounts per line item
+                if ($sale->payment_method === 'cash') {
+                    $reportData[$key]['cash'] += $lineAmount;
+                } elseif ($sale->payment_method === 'online') {
+                    $reportData[$key]['online'] += $lineAmount;
+                } elseif ($sale->payment_method === 'card') {
+                    $reportData[$key]['pos'] += $lineAmount;
+                }
+            }
+        }
+
+        return view('sales.daily_report', compact('reportData', 'date'));
+    }  
+
+    public function dailyReportPdf($date = null)
+    {
+        $date = $date ? Carbon::parse($date)->toDateString() : Carbon::today()->toDateString();
+
+        $sales = Sale::with(['customer', 'saleItems.product'])
+            ->whereDate('created_at', $date)
+            ->get();
+
+        $reportData = [];
+
+        foreach ($sales as $sale) {
+            foreach ($sale->saleItems as $item) {
+                $customerName = $sale->customer->name ?? 'Unknown';
+                $productName = $item->product->name ?? 'Unknown';
+
+                $key = $customerName . '|' . $productName . '|' . $item->product->type;
+
+                if (!isset($reportData[$key])) {
+                    $reportData[$key] = [
+                        'customer' => $customerName,
+                        'product' => $productName,
+                        'qty' => 0,
+                        'cash' => 0,
+                        'bill_no' => $sale->id,
+                        'online' => 0,
+                        'pos' => 0,
                         'type' => $item->product->type,
-                        'scrape' => 0, // You can customize this as per your data
                         'amount' => 0,
                     ];
                 }
@@ -284,7 +335,6 @@ class SaleController extends Controller
                 $reportData[$key]['qty'] += $item->quantity;
                 $reportData[$key]['amount'] += $item->price * $item->quantity;
 
-                // Add to cash or online based on payment_method
                 if ($sale->payment_method == 'cash') {
                     $reportData[$key]['cash'] += $item->price * $item->quantity;
                 } elseif ($sale->payment_method == 'online') {
@@ -295,7 +345,9 @@ class SaleController extends Controller
             }
         }
 
-        return view('sales.daily_report', compact('reportData', 'date'));
+        $pdf = PDF::loadView('sales.daily_report_pdf', compact('reportData', 'date'));
+
+        return $pdf->download("daily_sales_report_{$date}.pdf");
     }
 
 }

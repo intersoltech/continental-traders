@@ -30,6 +30,9 @@ Route::middleware(['auth'])->group(function () {
     // Route to show printable sales receipt
     Route::get('/sales/{sale}/receipt', [SaleController::class, 'receipt'])->name('sales.receipt');    
     Route::get('/sales/daily-report/{date?}', [SaleController::class, 'dailyReport'])->name('sales.dailyReport');
+    // Route to download sales report as PDF
+    Route::get('/sales/daily-report/pdf/{date?}', [SaleController::class, 'dailyReportPdf'])->name('sales.dailyReportPdf');
+
 
 
     Route::resource('/purchases', PurchaseController::class);

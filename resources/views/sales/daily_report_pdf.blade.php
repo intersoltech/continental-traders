@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Daily Report - {{ $date }}</title>
+    <title>Daily Sales Report - {{ $date }}</title>
     <style>
         body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
         table { border-collapse: collapse; width: 100%; }
@@ -10,9 +10,9 @@
     </style>
 </head>
 <body>
-    <h1 style="text-align: center">
-        <img src="{{ asset('assets/img/logo-full.png') }}" alt="Continental Traders">
-    </h1>
+    <div style="text-align: center">
+        <img src="{{ asset('assets/img/logo-full.png') }}" alt="Big Logo">
+    </div>
     <h2>Daily Sales Report - {{ $date }}</h2>
 
     <table>
