@@ -119,7 +119,7 @@ login
             </div><!-- End card -->
 
             <div class="credits text-center">
-              Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
+              Designed by <a href="#">Murtaza & Co - 03142308332</a>
             </div>
 
           </div>
