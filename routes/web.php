@@ -27,6 +27,11 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/products', ProductController::class);
     Route::resource('/customers', CustomerController::class);
     Route::resource('/sales', SaleController::class);
+    // Route to show printable sales receipt
+    Route::get('/sales/{sale}/receipt', [SaleController::class, 'receipt'])->name('sales.receipt');    
+    Route::get('/sales/daily-report/{date?}', [SaleController::class, 'dailyReport'])->name('sales.dailyReport');
+
+
     Route::resource('/purchases', PurchaseController::class);
     Route::get('/search-customer', [CustomerController::class, 'search'])->name('customer.search');
     // routes/web.php

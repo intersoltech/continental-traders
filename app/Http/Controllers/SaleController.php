@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Inventory;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
 
 class SaleController extends Controller
 {
@@ -22,6 +24,12 @@ class SaleController extends Controller
     {
         $products = Product::with('inventory')->get();
         return view('sales.create', compact('products'));
+    }
+
+    public function show($id)
+    {
+        $sale = Sale::with('saleItems.product', 'customer')->findOrFail($id);
+        return view('sales.show', compact('sale'));
     }
 
     public function store(Request $request)
@@ -230,4 +238,64 @@ class SaleController extends Controller
             return back()->withErrors(['error' => 'Sale deletion failed: ' . $e->getMessage()]);
         }
     }
+    public function receipt(Sale $sale)
+    {
+        // Eager load customer and sale items with products
+        $sale->load('customer', 'saleItems.product');
+
+        return view('sales.receipt', compact('sale'));
+    }
+    
+
+    public function dailyReport($date = null)
+    {
+        $date = $date ? Carbon::parse($date)->toDateString() : Carbon::today()->toDateString();
+
+        // Fetch sales for the given date with related data
+        $sales = Sale::with(['customer', 'saleItems.product'])
+            ->whereDate('created_at', $date)
+            ->get();
+
+        // Aggregate data for the report
+        $reportData = [];
+
+        foreach ($sales as $sale) {
+            foreach ($sale->saleItems as $item) {
+                $customerName = $sale->customer->name ?? 'Unknown';
+
+                // Group by customer and product type
+                $key = $customerName . '|' . $item->product->type;
+
+                if (!isset($reportData[$key])) {
+                    $reportData[$key] = [
+                        'name' => $customerName,
+                        'qty' => 0,
+                        'cash' => 0,
+                        'bill_no' => $sale->id, // you can modify this to your bill number logic
+                        'bank' => $sale->payment_method == 'card' ? $sale->total : 0,
+                        'online' => $sale->payment_method == 'online' ? $sale->total : 0,
+                        'pos' => $sale->payment_method == 'card' ? $sale->total : 0,
+                        'type' => $item->product->type,
+                        'scrape' => 0, // You can customize this as per your data
+                        'amount' => 0,
+                    ];
+                }
+
+                $reportData[$key]['qty'] += $item->quantity;
+                $reportData[$key]['amount'] += $item->price * $item->quantity;
+
+                // Add to cash or online based on payment_method
+                if ($sale->payment_method == 'cash') {
+                    $reportData[$key]['cash'] += $item->price * $item->quantity;
+                } elseif ($sale->payment_method == 'online') {
+                    $reportData[$key]['online'] += $item->price * $item->quantity;
+                } elseif ($sale->payment_method == 'card') {
+                    $reportData[$key]['pos'] += $item->price * $item->quantity;
+                }
+            }
+        }
+
+        return view('sales.daily_report', compact('reportData', 'date'));
+    }
+
 }

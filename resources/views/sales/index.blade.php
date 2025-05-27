@@ -55,6 +55,7 @@
                                             <td>{{ number_format($sale->total, 2) }}</td>
                                             <td>{{ ucfirst($sale->payment_method) }}</td>
                                             <td>
+                                                <a href="{{ route('sales.receipt', $sale->id) }}" class="btn btn-sm btn-info" target="_blank">Print Receipt</a>
                                                 <a href="{{ route('sales.edit', $sale) }}"
                                                     class="btn btn-sm btn-warning">Edit</a>
                                                 <form action="{{ route('sales.destroy', $sale) }}" method="POST"
